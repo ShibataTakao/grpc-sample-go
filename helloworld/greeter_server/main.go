@@ -28,10 +28,13 @@ import (
 
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const (
-	port = ":50051"
+	port             = ":50051"
+	traceServiceName = "my-grpc-server"
 )
 
 // server is used to implement helloworld.GreeterServer.
@@ -46,11 +49,18 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 }
 
 func main() {
+	tracer.Start(tracer.WithServiceName(traceServiceName))
+	defer tracer.Stop()
+
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	s := grpc.NewServer()
+
+	si := grpctrace.StreamServerInterceptor(grpctrace.WithServiceName("my-grpc-client")) // Set your service name
+	ui := grpctrace.UnaryServerInterceptor(grpctrace.WithServiceName("my-grpc-client"))
+
+	s := grpc.NewServer(grpc.StreamInterceptor(si), grpc.UnaryInterceptor(ui))
 	pb.RegisterGreeterServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

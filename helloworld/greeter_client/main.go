@@ -21,22 +21,40 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const (
-	address     = "localhost:50051"
-	defaultName = "world"
+	defaultName       = "world"
+	defaultServerHost = "localhost"
+	port              = "50051"
+	traceServiceName  = "my-grpc-client"
 )
 
 func main() {
+	tracer.Start(tracer.WithServiceName(traceServiceName))
+	defer tracer.Stop()
+
+	si := grpctrace.StreamClientInterceptor(grpctrace.WithServiceName(traceServiceName))
+	ui := grpctrace.UnaryClientInterceptor(grpctrace.WithServiceName(traceServiceName))
+
+	serverHost := os.Getenv("SERVER_HOST")
+	if serverHost == "" {
+		serverHost = defaultServerHost
+	}
+	address := fmt.Sprintf("%s:%s", serverHost, port)
+
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithStreamInterceptor(si), grpc.WithUnaryInterceptor(ui))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
