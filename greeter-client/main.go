@@ -21,7 +21,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -34,10 +33,8 @@ import (
 )
 
 const (
-	defaultName       = "world"
-	defaultServerHost = "localhost"
-	port              = "50051"
-	traceServiceName  = "my-grpc-client"
+	defaultName      = "world"
+	traceServiceName = "my-grpc-client"
 )
 
 func main() {
@@ -47,12 +44,7 @@ func main() {
 	si := grpctrace.StreamClientInterceptor(grpctrace.WithServiceName(traceServiceName))
 	ui := grpctrace.UnaryClientInterceptor(grpctrace.WithServiceName(traceServiceName))
 
-	serverHost := os.Getenv("SERVER_HOST")
-	if serverHost == "" {
-		serverHost = defaultServerHost
-	}
-	address := fmt.Sprintf("%s:%s", serverHost, port)
-
+	address := os.Getenv("ADDRESS")
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithStreamInterceptor(si), grpc.WithUnaryInterceptor(ui))
 	if err != nil {
@@ -62,11 +54,10 @@ func main() {
 	c := pb.NewGreeterClient(conn)
 
 	// Contact the server and print out its response.
-	name := defaultName
-	if len(os.Args) > 1 {
-		name = os.Args[1]
+	name := os.Getenv("NAME")
+	if name == "" {
+		name = defaultName
 	}
-
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()

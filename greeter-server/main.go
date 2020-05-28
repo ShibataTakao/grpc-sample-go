@@ -16,8 +16,6 @@
  *
  */
 
-//go:generate protoc -I ../helloworld --go_out=plugins=grpc:../helloworld ../helloworld/helloworld.proto
-
 // Package main implements a server for Greeter service.
 package main
 
@@ -25,6 +23,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"os"
 
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
@@ -33,7 +32,6 @@ import (
 )
 
 const (
-	port             = ":50051"
 	traceServiceName = "my-grpc-server"
 )
 
@@ -52,13 +50,14 @@ func main() {
 	tracer.Start(tracer.WithServiceName(traceServiceName))
 	defer tracer.Stop()
 
+	port := os.Getenv("PORT")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	si := grpctrace.StreamServerInterceptor(grpctrace.WithServiceName("my-grpc-client")) // Set your service name
-	ui := grpctrace.UnaryServerInterceptor(grpctrace.WithServiceName("my-grpc-client"))
+	si := grpctrace.StreamServerInterceptor(grpctrace.WithServiceName(traceServiceName))
+	ui := grpctrace.UnaryServerInterceptor(grpctrace.WithServiceName(traceServiceName))
 
 	s := grpc.NewServer(grpc.StreamInterceptor(si), grpc.UnaryInterceptor(ui))
 	pb.RegisterGreeterServer(s, &server{})
