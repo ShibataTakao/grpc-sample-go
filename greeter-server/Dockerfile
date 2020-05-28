@@ -1,6 +1,6 @@
 FROM golang:1.14.2
 
-ADD . /app
+ADD ./greeter-server /app
 WORKDIR /app
 RUN go build
-ENTRYPOINT ["/app/greeter_server"]
+ENTRYPOINT ["./greeter-server"]
