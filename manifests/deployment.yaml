@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-greeter-server
+spec:
+  selector:
+    matchLabels:
+      app: grpc-greeter-server
+  template:
+    metadata:
+      labels:
+        app: grpc-greeter-server
+    spec:
+      containers:
+      - name: grpc-greeter-server
+        image: shibatatakao/grpc-greeter-server:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: PORT
+          value: :8000
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-greeter-client
+spec:
+  selector:
+    matchLabels:
+      app: grpc-greeter-client
+  template:
+    metadata:
+      labels:
+        app: grpc-greeter-client
+    spec:
+      containers:
+      - name: grpc-greeter-client
+        image: shibatatakao/grpc-greeter-client:latest
+        env:
+        - name: ADDRESS
+          value: grpc-greeter-server:8000
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
