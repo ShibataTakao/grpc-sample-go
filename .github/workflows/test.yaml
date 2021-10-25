@@ -1,0 +1,20 @@
+name: Build and push image
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build-and-push:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app:
+          - greeter-client
+          - greeter-server
+    steps:
+      - uses: actions/checkout@v2
+      - run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+      - run: docker build . -t ghcr.io/$(echo ${{ github.repository_owner }} | awk '{print tolower($0)}')/${{ matrix.app }}:latest
+        working-directory: ./${{ matrix.app }}
+      - run: docker push ghcr.io/$(echo ${{ github.repository_owner }} | awk '{print tolower($0)}')/${{ matrix.app }}:latest
