@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
 
+	"google.golang.org/grpc/credentials"
 	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
@@ -44,9 +45,13 @@ func main() {
 	si := grpctrace.StreamClientInterceptor(grpctrace.WithServiceName(traceServiceName))
 	ui := grpctrace.UnaryClientInterceptor(grpctrace.WithServiceName(traceServiceName))
 
-	address := os.Getenv("ADDRESS")
+	address := "alb.isid.shibataka000.com:50051"
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithStreamInterceptor(si), grpc.WithUnaryInterceptor(ui))
+	creds, err := credentials.NewClientTLSFromFile("/usr/share/ca-certificates/mozilla/Starfield_Services_Root_Certificate_Authority_-_G2.crt", "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(creds), grpc.WithStreamInterceptor(si), grpc.WithUnaryInterceptor(ui))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -59,8 +64,7 @@ func main() {
 		name = defaultName
 	}
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
+		ctx := context.Background()
 		r, err := c.SayHello(ctx, &pb.HelloRequest{Name: name})
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)
