@@ -7,14 +7,20 @@ jobs:
   build-and-push:
     name: Build and push image
     runs-on: ubuntu-latest
+    env:
+      GHCR_REPO: ghcr.io/$(echo ${{ github.repository_owner }} | awk '{print tolower($0)}')
     strategy:
       matrix:
         app:
           - greeter-client
           - greeter-server
     steps:
-      - uses: actions/checkout@v2
-      - run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-      - run: docker build . -t ghcr.io/$(echo ${{ github.repository_owner }} | awk '{print tolower($0)}')/${{ matrix.app }}:latest
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+      - name: Build image
+        run: docker build . -t ${{ env.GHCR_REPO }}/${{ matrix.app }}:latest
         working-directory: ./${{ matrix.app }}
-      - run: docker push ghcr.io/$(echo ${{ github.repository_owner }} | awk '{print tolower($0)}')/${{ matrix.app }}:latest
+      - name: Push image
+        run: docker push ${{ env.GHCR_REPO }}/${{ matrix.app }}:latest
