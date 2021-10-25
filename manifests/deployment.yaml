@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: grpc-greeter-server
-        image: shibatatakao/grpc-greeter-server:latest
+        image: ghcr.io/shibatatakao/greeter-server:latest
         ports:
         - containerPort: 8000
         env:
@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
       - name: grpc-greeter-client
-        image: shibatatakao/grpc-greeter-client:latest
+        image: ghcr.io/shibatatakao/greeter-client:latest
         env:
         - name: ADDRESS
           value: grpc-greeter-server:8000
